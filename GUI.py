@@ -57,7 +57,7 @@ def open_new_item_window(barcode):
     """Open window for entering new item details."""
     item_window = Toplevel(root)
     item_window.title(f"Add Item - Barcode: {barcode}")
-    item_window.geometry('500x320')
+    item_window.geometry('500x350')
     
     # Name
     Label(item_window, text="Item Name:").pack(pady=5)
@@ -66,13 +66,17 @@ def open_new_item_window(barcode):
     
     # Category
     Label(item_window, text="Category:").pack(pady=5)
-    category_entry = Entry(item_window, width=40)
-    category_entry.pack(pady=5)
+    category_var_new = StringVar()
+    category_combo_new = ttk.Combobox(item_window, textvariable=category_var_new, width=37)
+    category_combo_new['values'] = list(inventory.categories.keys())
+    category_combo_new.pack(pady=5)
     
     # Storage Location
     Label(item_window, text="Storage Location:").pack(pady=5)
-    storage_entry = Entry(item_window, width=40)
-    storage_entry.pack(pady=5)
+    storage_var_new = StringVar()
+    storage_combo_new = ttk.Combobox(item_window, textvariable=storage_var_new, width=37)
+    storage_combo_new['values'] = list(inventory.storages.keys())
+    storage_combo_new.pack(pady=5)
     
     # Purchase Date
     Label(item_window, text="Purchase Date (YYYY-MM-DD):").pack(pady=5)
@@ -85,19 +89,19 @@ def open_new_item_window(barcode):
     exp_entry = Entry(item_window, width=40)
     
     def update_recommended_exp(*args):
-        cat = category_entry.get().strip()
+        cat = category_var_new.get().strip()
         if cat:
             recommended = inventory.get_recommended_exp_date(cat, datetime.now())
             exp_entry.delete(0, END)
             exp_entry.insert(0, recommended.strftime('%Y-%m-%d'))
     
-    category_entry.bind('<FocusOut>', update_recommended_exp)
+    category_var_new.trace_add('write', update_recommended_exp)
     exp_entry.pack(pady=5)
     
     def save_item():
         name = name_entry.get().strip()
-        category = category_entry.get().strip()
-        storage = storage_entry.get().strip()
+        category = category_var_new.get().strip()
+        storage = storage_var_new.get().strip()
         
         if not all([name, category, storage]):
             messagebox.showerror("Error", "Please fill in all required fields.")
@@ -140,9 +144,69 @@ def process_barcode(event=None):
 
 barcode_entry.bind('<Return>', process_barcode)
 
+def edit_session_item():
+    selected = session_tree.selection()
+    if not selected:
+        messagebox.showwarning("Warning", "Select an item to edit.")
+        return
+    
+    item_id = int(session_tree.item(selected[0], 'values')[0])
+    # Find item in session_items
+    edit_item = None
+    for item in session_items:
+        if item.item_id == item_id:
+            edit_item = item
+            break
+    
+    if not edit_item:
+        messagebox.showerror("Error", "Item not found.")
+        return
+    
+    edit_window = Toplevel(root)
+    edit_window.title(f"Edit Session Item - {edit_item.name}")
+    edit_window.geometry('500x280')
+    
+    Label(edit_window, text="Name:").pack(pady=5)
+    name_entry = Entry(edit_window, width=40)
+    name_entry.insert(0, edit_item.name)
+    name_entry.pack(pady=5)
+    
+    Label(edit_window, text="Category:").pack(pady=5)
+    category_var_edit = StringVar(value=edit_item.category)
+    category_combo_edit = ttk.Combobox(edit_window, textvariable=category_var_edit, width=37)
+    category_combo_edit['values'] = list(inventory.categories.keys())
+    category_combo_edit.pack(pady=5)
+    
+    Label(edit_window, text="Storage Location:").pack(pady=5)
+    storage_var_edit = StringVar(value=edit_item.storage_location)
+    storage_combo_edit = ttk.Combobox(edit_window, textvariable=storage_var_edit, width=37)
+    storage_combo_edit['values'] = list(inventory.storages.keys())
+    storage_combo_edit.pack(pady=5)
+    
+    Label(edit_window, text="Expiration Date (YYYY-MM-DD):").pack(pady=5)
+    exp_entry = Entry(edit_window, width=40)
+    exp_entry.insert(0, edit_item.exp_date.strftime('%Y-%m-%d'))
+    exp_entry.pack(pady=5)
+    
+    def save_changes():
+        edit_item.name = name_entry.get()
+        edit_item.category = category_var_edit.get()
+        edit_item.storage_location = storage_var_edit.get()
+        try:
+            edit_item.exp_date = datetime.strptime(exp_entry.get(), '%Y-%m-%d')
+        except ValueError:
+            messagebox.showerror("Error", "Invalid date format.")
+            return
+        messagebox.showinfo("Success", "Item updated!")
+        refresh_session_tree()
+        edit_window.destroy()
+    
+    Button(edit_window, text="Save Changes", command=save_changes, bg="green", fg="white", width=20).pack(pady=15)
+
 button_frame = Frame(enter_frame)
 button_frame.pack(pady=10)
 
+Button(button_frame, text="Edit Selected", command=edit_session_item, bg="orange", fg="white", width=15).pack(side=LEFT, padx=5)
 Button(button_frame, text="Approve Session", command=lambda: session_items.clear() or refresh_session_tree(), bg="green", fg="white", width=20).pack(side=LEFT, padx=5)
 refresh_session_tree()
 
@@ -173,13 +237,11 @@ Label(search_frame, text="Search:").pack(side=LEFT, padx=5)
 search_entry = Entry(search_frame, width=20)
 search_entry.pack(side=LEFT, padx=5)
 
-Button(search_frame, text="Search", command=lambda: refresh_inventory(), bg="blue", fg="white", width=10).pack(side=LEFT, padx=5)
-
 # Treeview for inventory
 inv_columns = ('ID', 'Barcode', 'Name', 'Category', 'Qty', 'Storage', 'Exp Date', 'Warning')
 inv_tree = ttk.Treeview(inventory_frame, columns=inv_columns, show='headings', height=20)
 for col in inv_columns:
-    inv_tree.heading(col, text=col)
+    inv_tree.heading(col, text=col, command=lambda c=col: sort_by_column(c, False))
     inv_tree.column(col, width=100)
 inv_tree.pack(padx=10, pady=10, fill=BOTH, expand=True)
 
@@ -187,7 +249,17 @@ scrollbar_inv = ttk.Scrollbar(inventory_frame, orient=VERTICAL, command=inv_tree
 inv_tree.configure(yscroll=scrollbar_inv.set)
 scrollbar_inv.pack(side=RIGHT, fill=Y)
 
-def refresh_inventory():
+# Sorting variables
+sort_column = None
+sort_reverse = False
+
+def sort_by_column(col, reverse):
+    global sort_column, sort_reverse
+    sort_column = col
+    sort_reverse = reverse
+    refresh_inventory(sort=True)
+
+def refresh_inventory(sort=False):
     for item in inv_tree.get_children():
         inv_tree.delete(item)
     
@@ -211,14 +283,29 @@ def refresh_inventory():
     
     warning_items = {i.item_id for i in inventory.get_items_warning_expiration()}
     
+    # Prepare data for sorting
+    data = []
     for barcode, items in by_barcode.items():
         first = items[0]
         qty = len(items)
         warning = "⚠" if any(i.item_id in warning_items for i in items) else ""
-        inv_tree.insert('', END, values=(
+        data.append((
             first.item_id, barcode, first.name, first.category, qty, first.storage_location,
             first.exp_date.strftime('%Y-%m-%d'), warning
         ))
+    
+    # Sort if requested
+    if sort and sort_column:
+        col_index = inv_columns.index(sort_column)
+        try:
+            # Try to convert to number for numeric columns
+            data.sort(key=lambda x: float(x[col_index]) if col_index in [0, 4] else x[col_index], reverse=sort_reverse)
+        except (ValueError, TypeError):
+            data.sort(key=lambda x: x[col_index], reverse=sort_reverse)
+    
+    # Insert sorted data
+    for row in data:
+        inv_tree.insert('', END, values=row)
 
 def edit_selected_item():
     selected = inv_tree.selection()
@@ -235,7 +322,7 @@ def edit_selected_item():
     
     edit_window = Toplevel(root)
     edit_window.title(f"Edit Item - {item.name}")
-    edit_window.geometry('500x280')
+    edit_window.geometry('500x300')
     
     Label(edit_window, text="Name:").pack(pady=5)
     name_entry = Entry(edit_window, width=40)
@@ -290,9 +377,9 @@ Button(inv_button_frame, text="Edit Selected", command=edit_selected_item, bg="o
 Button(inv_button_frame, text="Remove Selected", command=remove_selected_item, bg="red", fg="white", width=15).pack(side=LEFT, padx=5)
 
 search_entry.bind('<KeyRelease>', lambda e: refresh_inventory())
-category_var.trace('w', lambda *args: refresh_inventory())
-storage_var.trace('w', lambda *args: refresh_inventory())
-status_var.trace('w', lambda *args: refresh_inventory())
+category_var.trace_add('write', lambda *args: refresh_inventory())
+storage_var.trace_add('write', lambda *args: refresh_inventory())
+status_var.trace_add('write', lambda *args: refresh_inventory())
 refresh_inventory()
 
 # ======================= OVERVIEW TAB =======================

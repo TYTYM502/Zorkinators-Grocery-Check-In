@@ -91,10 +91,11 @@ class Inventory:
             if cat_key not in self.categories:
                 self.categories[cat_key] = Category(name=item.category, storage_location=item.storage_location)
             self.categories[cat_key].items.append(item)
-            # Add to storage
-            if item.storage_location not in self.storages:
-                self.storages[item.storage_location] = Storage(location=item.storage_location)
-            self.storages[item.storage_location].items.append(item)
+            # Add to storage (case-insensitive)
+            storage_key = item.storage_location.lower()
+            if storage_key not in self.storages:
+                self.storages[storage_key] = Storage(location=item.storage_location)
+            self.storages[storage_key].items.append(item)
 
     def save_item(self, item: Item):
         self.conn.execute('''
@@ -113,8 +114,9 @@ class Inventory:
         self.conn.commit()
 
     def add_item(self, barcode: str, name: str, category: str, storage_location: str, exp_date: datetime, purchase_date: datetime) -> Item:
-        # Normalize category to lowercase for consistency
+        # Normalize category and storage location to lowercase for consistency
         category_lower = category.lower()
+        storage_lower = storage_location.lower()
         
         item = Item(
             item_id=None, barcode=barcode, name=name, category=category, storage_location=storage_location,
@@ -134,9 +136,9 @@ class Inventory:
         if category_lower not in self.categories:
             self.categories[category_lower] = Category(name=category, storage_location=storage_location)
         self.categories[category_lower].items.append(item)
-        if storage_location not in self.storages:
-            self.storages[storage_location] = Storage(location=storage_location)
-        self.storages[storage_location].items.append(item)
+        if storage_lower not in self.storages:
+            self.storages[storage_lower] = Storage(location=storage_location)
+        self.storages[storage_lower].items.append(item)
         self.save_category(self.categories[category_lower])
         return item
 
