@@ -1,33 +1,38 @@
 # Zorkinators Grocery Check-In System
 
-This is a grocery check-in system for CSC 132 that allows users to check in food items via a barcode scanner.
+This project is now set up as a browser-based grocery check-in app backed by the existing SQLite inventory database.
 
-## Features
+## What Changed
 
-- **Barcode Scanning**: Input 12-digit barcode numbers via scanner (simulates keyboard input with automatic enter).
-- **Item Management**: Store items with name, category, storage location, quantity, expiration date, purchase date, batch number.
-- **Categories**: Group items by category with general attributes like storage location and recommended expiration period.
-- **Storage Locations**: Organize items by storage location.
-- **GUI**: Tkinter-based interface to view inventory, add items, remove items, check expired items.
-- **Database Persistence**: Uses SQLite to save data across sessions.
+- The old Tkinter desktop workflow has been converted into an HTML/CSS/JavaScript interface.
+- The Python inventory and database layer in `DataCenter.py` is still reused.
+- The new UI adds:
+  - a dashboard with live inventory stats
+  - a cleaner check-in session flow
+  - inventory filtering by category, storage, and freshness
+  - category rule management with default expiration guidance
+  - a faster checkout flow for removing one scanned item at a time
 
-## Files
+## Main Files
 
-- **DataCenter.py**: Contains the data models (Item, Category, Storage, Inventory) and database operations.
-- **GUI.py**: The main GUI application that interacts with the DataCenter.
+- `app.py`: Small Python web server and JSON API.
+- `DataCenter.py`: Inventory models and SQLite persistence.
+- `templates/index.html`: Main HTML shell.
+- `static/style.css`: Visual design and responsive layout.
+- `static/app.js`: Client-side rendering and interactions.
+- `GUI.py`: Original Tkinter version kept for reference.
 
-## How to Use
+## How to Run
 
-1. Run `py GUI.py` to start the application.
-2. Scan a barcode or type it in the entry field and press Enter.
-3. If the item exists, quantity is incremented.
-4. If new, enter item details (name, category, etc.), with recommended expiration date.
-5. View items in the table.
-6. Use buttons to remove items or check for expired ones.
+1. Start the web app with a Python interpreter:
+   `python app.py`
+2. Open `http://127.0.0.1:8000` in a browser.
+3. Scan or type a barcode to add items into the current session.
+4. Use the inventory tab to search, edit, or archive items.
+5. Use the categories tab to manage shelf-life defaults and warning thresholds.
 
-## Classes
+## Notes
 
-- **Item**: Represents individual food items.
-- **Category**: Groups items with general attributes.
-- **Storage**: Groups items by storage location.
-- **Inventory**: Manages all data and database operations.
+- Data is still stored in `inventory.db`.
+- Existing barcodes reuse their saved item details automatically.
+- New barcodes open an item form so the product can be saved immediately.
