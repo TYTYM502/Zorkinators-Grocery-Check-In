@@ -95,17 +95,7 @@ class Inventory:
             # skip archived in row 7 because it is used above
             archived_date = datetime.fromisoformat(row[8]) if row[8] else None
 
-            item = Item(
-                item_id=row[0],
-                barcode=row[1],
-                name=row[2],
-                category=row[3],
-                storage_location=row[4],
-                exp_date=exp_date,
-                purchase_date=purchase_date,
-                archived=bool(row[7]),
-                archived_date=archived_date
-            )
+            item = self._row_to_item(row)
 
             self.items[item.item_id] = item
             
@@ -122,13 +112,56 @@ class Inventory:
                 self.storages[storage_key] = Storage(location=item.storage_location)
 
             self.storages[storage_key].items.append(item)
+
+    # "-> Item" makes the function show that it turns into an Item
+    def _row_to_item(self, row) -> Item:
+        # converts SQL database time from string to datetime format
+        exp_date = datetime.fromisoformat(row[5])
+        purchase_date = datetime.fromisoformat(row[6])
+        # checks if there is actually an archived date
+        archived_date = datetime.fromisoformat(row[8]) if row[8] else None
+
+        item = Item(
+            item_id=row[0],
+            barcode=row[1],
+            name=row[2],
+            category=row[3],
+            storage_location=row[4],
+            exp_date=exp_date,
+            purchase_date=purchase_date,
+            # converts 0 or 1 in database into False or True in python
+            archived=bool(row[7]),
+            archived_date=archived_date
+        )
+
+        return item
+
+    # ": Category" is a type hint
+    def save_category(self, cat: Category):
+        self.conn.execute(
+            # question marks are placeholders
+            '''
+            INSERT OR REPLACE INTO categories VALUES (?, ?, ?, ?)
+            ''',
+            (cat.name, cat.storage_location, cat.recommended_exp_days, cat.warning_threshold_percent)
+            )
+        # publishes changes kind of like GitHub
+        self.conn.commit()
+
     def close(self):
         """Close the database connection"""
         if self.conn:
             self.conn.close()
 
-
-inventory = Inventory()
-print(inventory.categories)
-print(inventory.items)
-print(inventory.storages)
+##### MAIN CODE TESTING #####
+def main():
+    inventory = Inventory()
+    cat = Category(
+        name="produce",
+        storage_location="cooler",
+        recommended_exp_days=7,
+        warning_threshold_percent=80
+    )
+    inventory.save_category(cat)
+    cat.warning_threshold_percent = 75
+    inventory.save_category(cat)
