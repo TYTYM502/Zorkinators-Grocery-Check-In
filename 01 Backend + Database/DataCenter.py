@@ -62,7 +62,7 @@ class Inventory:
                 name TEXT,
                 category TEXT,
                 storage_location TEXT,
-                expiration_date TEXT,
+                exp_date TEXT,
                 purchase_date TEXT,
                 archived INTEGER DEFAULT 0,
                 archived_date TEXT
@@ -148,20 +148,73 @@ class Inventory:
         # publishes changes kind of like GitHub
         self.conn.commit()
 
+    def create_record(
+        self,
+        barcode: str,
+        name: str,
+        category: str,
+        storage_location: str,
+        exp_date: datetime,
+        purchase_date: datetime,
+        archived: bool = False
+    ):
+        # whether archived date should be set
+        archived_date = datetime.now().isoformat() if archived else None
+        # run SQL insert
+        self.conn.execute(
+            '''
+            INSERT INTO items (barcode, name, category, storage_location, exp_date, purchase_date, archived, archived_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                barcode, 
+                name,
+                category,
+                storage_location,
+                exp_date.isoformat(),
+                purchase_date.isoformat(),
+                int(archived),
+                archived_date,
+            ),
+        )
+        # commit the change
+        self.conn.commit()
+        # get new item ID
+        item_id = self.conn.execute('SELECT last_insert_rowid()').fetchone()[0]
+        # reload active inventory
+        self.load_data()
+        # return created record
+        if not archived and item_id in self.items:
+            return self.items[item_id]
+        return self.get_record(item_id)
+
+    def add_item(
+        self, 
+        barcode: str,
+        name: str,
+        category: str,
+        storage_location: str,
+        exp_date: datetime,
+        purchase_date: datetime
+    ):
+        return self.create_record(
+            barcode,
+            name,
+            category,
+            storage_location,
+            exp_date,
+            purchase_date,
+            archived=False
+        )
+
     def close(self):
         """Close the database connection"""
         if self.conn:
-            self.conn.close()
-
-##### MAIN CODE TESTING #####
+            self.conn.close()   
 def main():
+    exp_date = datetime(2026, 5, 22)
+    purchase_date = datetime(2026, 4, 30)
     inventory = Inventory()
-    cat = Category(
-        name="produce",
-        storage_location="cooler",
-        recommended_exp_days=7,
-        warning_threshold_percent=80
-    )
-    inventory.save_category(cat)
-    cat.warning_threshold_percent = 75
-    inventory.save_category(cat)
+    item = inventory.add_item("123456789123", "Peanutbutter", "Jar", "Pantry", exp_date, purchase_date)
+
+#main()
