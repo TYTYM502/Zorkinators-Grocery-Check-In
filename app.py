@@ -13,6 +13,8 @@ from DataCenter import Inventory
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 TEMPLATE_DIR = BASE_DIR / "templates"
+FALLBACK_STATIC_DIR = BASE_DIR
+FALLBACK_TEMPLATE_FILE = BASE_DIR / "index.html"
 
 
 class GroceryWebApp:
@@ -263,11 +265,11 @@ class GroceryRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         if parsed.path == "/":
-            self._serve_file(TEMPLATE_DIR / "index.html", "text/html; charset=utf-8")
+            self._serve_file(self._resolve_template_file(), "text/html; charset=utf-8")
             return
 
         if parsed.path.startswith("/static/"):
-            target = STATIC_DIR / parsed.path.removeprefix("/static/")
+            target = self._resolve_static_file(parsed.path.removeprefix("/static/"))
             self._serve_file(target)
             return
 
@@ -406,6 +408,18 @@ class GroceryRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _resolve_template_file(self) -> Path:
+        template_file = TEMPLATE_DIR / "index.html"
+        if template_file.exists():
+            return template_file
+        return FALLBACK_TEMPLATE_FILE
+
+    def _resolve_static_file(self, relative_path: str) -> Path:
+        static_file = STATIC_DIR / relative_path
+        if static_file.exists():
+            return static_file
+        return FALLBACK_STATIC_DIR / Path(relative_path).name
 
 
 def run():
