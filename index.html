@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shelf-Sync</title>
+    <!--Material Icons-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+  rel="stylesheet">
+    <!--Stylesheet-->
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <img src="./download.png" alt="">
+                    <h2>Shelf<span class="danger">Sync</span></h2>
+                </div>
+                <div class="close id=close-btn">
+                    <span class="material-icons">close</span>
+                </div>
+            </div>
+            
+            
+            <div class="sidebar">
+                <a href="#" class="active">
+                    <span class="material-icons">grid_view</span>
+                    <h3>Dashboard</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons">list</span>
+                    <h3>Items</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons">shopping_cart</span>
+                    <h3>Grocery List</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons">notification_add</span>
+                    <h3>Notifications</h3>
+                    <span class="notification-count">5</span>
+                </a>
+                <a href="#">
+                    <span class="material-icons">add_box</span>
+                    <h3>Add Item</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons">settings</span>
+                    <h3>Settings</h3>
+                </a>
+            </div>
+        </aside>
+    
+
+        <main>
+           <div class="header">
+                <h2>Grocery Tracker</h2>
+            </div>
+            <div class="total">
+                    <h1>Total Items</h1>  
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="inventory">Inventory</div>
+                <div class="tab" data-tab="shopping">Shopping List</div>
+                <div class="tab" data-tab="database">Database</div>
+            </div>
+
+            <div class="tab-content active" id="inventory">
+                <h2>Inventory</h2>
+                <p>Your inventory items go here</p>
+                
+            </div>
+
+            <div class="tab-content" id="shopping">
+                <h2>Shopping List</h2>
+                <p>Your shopping list goes here</p>
+
+                <div class="filter-buttons">
+                    <button class="item-btn">
+                        <span>All Items</span>
+                    </button>
+                    
+                    <button class="soon-btn">
+                        <span>Expiring Soon</span>
+                    </button>
+                
+                    <button class="add-btn">
+                        <span class="material-icons">add</span>
+                        <span>Add Item</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-content" id="database">
+                <h2>Databse</h2>
+                <p>Your database content go here</p>
+                <button class="add-btn">
+                    <span class="material-icons">add</span>
+                    <span>Add Item</span>
+                </button>
+                <div class="expiring_soon">
+                    <div class="list">
+                        <div class="row">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Items</th>
+                                        <th>Category</th>
+                                        <th>Barcode</th>
+                                        <th>Qty</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Great Value Whole Milk</td>
+                                        <td>Dairy</td>
+                                        <td>078742352008</td>
+                                        <td>1</td>
+                                        <td>2026-05-10</td>
+                                        <td class="fresh">Fresh</td>
+                                    </tr>
+                                </tbody>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Great Value Whole Milk</td>
+                                        <td>Dairy</td>
+                                        <td>078742352008</td>
+                                        <td>1</td>
+                                        <td>2026-05-10</td>
+                                        <td class="fresh">Fresh</td>
+                                    </tr>
+                                </tbody>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Great Value Whole Milk</td>
+                                        <td>Dairy</td>
+                                        <td>078742352008</td>
+                                        <td>1</td>
+                                        <td>2026-05-10</td>
+                                        <td class="fresh">Fresh</td>
+                                    </tr>
+                                </tbody>
+                        </table>
+                        </div>
+                                                    
+                    </div>
+                </div>
+            </div>
+
+           
+
+            
+            
+            
+        </main>
+        <div class="top">
+            <div class="theme-toggler">
+                <span class="material-icons active">light_mode</span>
+                <span class="material-icons">dark_mode</span>
+            </div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
