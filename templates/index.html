@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shelf Sync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <h1>Shelf Sync Inventory</h1>
+      </div>
+    </header>
+
+    <section class="stats-grid" id="statsGrid"></section>
+
+    <nav class="tab-bar" aria-label="Main sections">
+      <button class="tab-link active" data-tab="checkin">Check In</button>
+      <button class="tab-link" data-tab="inventory">Inventory</button>
+      <button class="tab-link" data-tab="records">Records</button>
+      <button class="tab-link" data-tab="checkout">Checkout</button>
+      <button class="tab-link" data-tab="categories">Categories</button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="checkin">
+        <div class="card card-wide">
+          <div class="section-heading">
+            <div>
+              <h2>Scan or enter a barcode</h2>
+              <p>Add recognized items instantly, or create a new item record when a barcode is new.</p>
+            </div>
+          </div>
+          <form id="scanForm" class="inline-form">
+            <input id="scanBarcode" name="barcode" type="text" placeholder="Scan barcode" autocomplete="off">
+            <button type="submit">Add to Session</button>
+          </form>
+          <div id="scanMessage" class="feedback" aria-live="polite"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Current session</h2>
+              <p>Review items before you approve this check-in batch.</p>
+            </div>
+            <button id="approveSessionBtn" class="ghost-button">Approve Session</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Session ID</th>
+                  <th>Barcode</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Storage</th>
+                  <th>Purchased</th>
+                  <th>Expires</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="sessionTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="inventory">
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Inventory search</h2>
+              <p>Filter by category, storage, or freshness status.</p>
+            </div>
+          </div>
+          <form id="filterForm" class="filters">
+            <input id="searchQuery" name="query" type="search" placeholder="Search name or barcode">
+            <select id="filterCategory" name="category"></select>
+            <select id="filterStorage" name="storage"></select>
+            <select id="filterStatus" name="status">
+              <option value="all">All statuses</option>
+              <option value="fresh">Fresh</option>
+              <option value="expiring_soon">Expiring soon</option>
+              <option value="expired">Expired</option>
+            </select>
+            <button type="submit">Refresh</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Barcode</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Storage</th>
+                  <th>Qty</th>
+                  <th>Soonest Exp.</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="records">
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h2>All records</h2>
+              <p>See serial IDs for active and archived items, and add archived-only records without putting them into inventory.</p>
+            </div>
+            <button id="newRecordBtn" class="ghost-button">Add Record</button>
+          </div>
+          <form id="recordFilterForm" class="filters">
+            <input id="recordSearchQuery" type="search" placeholder="Search serial ID, barcode, or name">
+            <select id="recordStatusFilter">
+              <option value="all">All records</option>
+              <option value="active">Active only</option>
+              <option value="archived">Archived only</option>
+            </select>
+            <button type="submit">Filter</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Serial ID</th>
+                  <th>Barcode</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Storage</th>
+                  <th>Purchased</th>
+                  <th>Expires</th>
+                  <th>Location</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="recordsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="tab-panel" id="checkout">
+        <div class="card card-wide">
+          <div class="section-heading">
+            <div>
+              <h2>Checkout by barcode</h2>
+              <p>Remove one unit at a time, starting with the oldest matching item.</p>
+            </div>
+          </div>
+          <form id="checkoutForm" class="inline-form">
+            <input id="checkoutBarcode" name="barcode" type="text" placeholder="Scan barcode to remove">
+            <button type="submit" class="danger-button">Remove 1 Item</button>
+          </form>
+          <div id="checkoutMessage" class="feedback" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="categories">
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Category rules</h2>
+              <p>Set default storage locations, shelf-life guidance, and warning thresholds.</p>
+            </div>
+            <button id="newCategoryBtn" class="ghost-button">Add Category</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Storage</th>
+                  <th>Recommended Days</th>
+                  <th>Warning %</th>
+                  <th>Items</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="categoryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="itemModal" class="modal">
+    <form id="itemForm" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow" id="itemModalEyebrow">New Item</p>
+          <h3 id="itemModalTitle">Add item</h3>
+        </div>
+        <button type="button" class="icon-button" data-close-modal="itemModal">Close</button>
+      </div>
+      <input id="itemFormMode" type="hidden" value="create">
+      <input id="itemFormTargetId" type="hidden">
+      <label>Barcode<input id="itemBarcode" name="barcode" type="text" required></label>
+      <label>Name<input id="itemName" name="name" type="text" required></label>
+      <label>Category<input id="itemCategory" name="category" list="categoryList" required></label>
+      <label>Storage location<input id="itemStorage" name="storage_location" list="storageList" required></label>
+      <label>Purchase date<input id="itemPurchaseDate" name="purchase_date" type="date" required></label>
+      <label>Expiration date<input id="itemExpDate" name="exp_date" type="date" required></label>
+      <label id="itemArchivedField" hidden>
+        Save as
+        <select id="itemArchived" name="archived">
+          <option value="false">Active inventory item</option>
+          <option value="true">Archived record only</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button type="submit">Save Item</button>
+      </div>
+      <div id="itemFormMessage" class="feedback" aria-live="polite"></div>
+    </form>
+  </dialog>
+
+  <dialog id="categoryModal" class="modal">
+    <form id="categoryForm" class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Category Rule</p>
+          <h3 id="categoryModalTitle">Add category</h3>
+        </div>
+        <button type="button" class="icon-button" data-close-modal="categoryModal">Close</button>
+      </div>
+      <label>Name<input id="categoryName" name="name" type="text" required></label>
+      <label>Storage location<input id="categoryStorage" name="storage_location" type="text" required></label>
+      <label>Recommended expiration days<input id="categoryDays" name="recommended_exp_days" type="number" min="1" required></label>
+      <label>Warning threshold percent<input id="categoryWarning" name="warning_threshold_percent" type="number" min="1" max="100" required></label>
+      <div class="modal-actions">
+        <button type="submit">Save Category</button>
+      </div>
+      <div id="categoryFormMessage" class="feedback" aria-live="polite"></div>
+    </form>
+  </dialog>
+
+  <datalist id="categoryList"></datalist>
+  <datalist id="storageList"></datalist>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
