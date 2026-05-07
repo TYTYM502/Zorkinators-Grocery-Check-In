@@ -12,6 +12,8 @@ const state = {
   },
 };
 
+let latestLoadRequestId = 0;
+
 const elements = {
   statsGrid: document.getElementById("statsGrid"),
   lastUpdated: document.getElementById("lastUpdated"),
@@ -59,6 +61,12 @@ document.getElementById("newRecordBtn").addEventListener("click", () => openItem
 document.getElementById("itemCategory").addEventListener("change", syncRecommendedDate);
 document.getElementById("itemCategory").addEventListener("input", syncRecommendedDate);
 document.getElementById("itemPurchaseDate").addEventListener("change", syncRecommendedDate);
+elements.searchQuery.addEventListener("input", onInventoryFilterChange);
+elements.filterCategory.addEventListener("change", onInventoryFilterChange);
+elements.filterStorage.addEventListener("change", onInventoryFilterChange);
+elements.filterStatus.addEventListener("change", onInventoryFilterChange);
+elements.recordSearchQuery.addEventListener("input", onRecordFilterChange);
+elements.recordStatusFilter.addEventListener("change", onRecordFilterChange);
 
 bootstrap();
 
@@ -67,9 +75,14 @@ async function bootstrap() {
 }
 
 async function loadState() {
+  const requestId = ++latestLoadRequestId;
   const params = new URLSearchParams(state.filters);
   const response = await fetch(`/api/bootstrap?${params.toString()}`);
-  state.data = await response.json();
+  const payload = await response.json();
+  if (requestId !== latestLoadRequestId) {
+    return;
+  }
+  state.data = payload;
   render();
 }
 
@@ -184,7 +197,7 @@ function renderInventory() {
                 <span>Serial ID: ${item.item_id}</span>
                 <span>Purchased: ${escapeHtml(item.purchase_date)}</span>
                 <span>Expires: ${escapeHtml(item.exp_date)}</span>
-                <span>Status: ${statusLabel(item.status)}</span>
+                <span>Status: ${statusPill(item.status)}</span>
               </div>
               <div class="row-actions">
                 <button type="button" class="secondary" data-edit-item="${item.item_id}">Edit</button>
@@ -358,6 +371,10 @@ async function approveSession() {
 
 async function onFilterSubmit(event) {
   event.preventDefault();
+  await onInventoryFilterChange();
+}
+
+async function onInventoryFilterChange() {
   state.filters.query = elements.searchQuery.value.trim();
   state.filters.category = elements.filterCategory.value;
   state.filters.storage = elements.filterStorage.value;
@@ -417,6 +434,10 @@ async function onItemSubmit(event) {
 
 async function onRecordFilterSubmit(event) {
   event.preventDefault();
+  onRecordFilterChange();
+}
+
+function onRecordFilterChange() {
   state.recordFilters.query = elements.recordSearchQuery.value.trim();
   state.recordFilters.status = elements.recordStatusFilter.value;
   renderRecords();
