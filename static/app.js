@@ -38,7 +38,9 @@ const elements = {
 };
 
 document.querySelectorAll(".tab-link").forEach((button) => {
-  button.addEventListener("click", () => activateTab(button.dataset.tab));
+  button.addEventListener("click", async () => {
+    await activateTab(button.dataset.tab);
+  });
 });
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
@@ -71,13 +73,18 @@ async function loadState() {
   render();
 }
 
-function activateTab(tabId) {
+async function refreshAfterChange() {
+  await loadState();
+}
+
+async function activateTab(tabId) {
   document.querySelectorAll(".tab-link").forEach((button) => {
     button.classList.toggle("active", button.dataset.tab === tabId);
   });
   document.querySelectorAll(".tab-panel").forEach((panel) => {
     panel.classList.toggle("active", panel.id === tabId);
   });
+  await refreshAfterChange();
 }
 
 function render() {
@@ -89,7 +96,9 @@ function render() {
   renderCategories();
   renderFilterOptions();
   renderDataLists();
-  elements.lastUpdated.textContent = `Last updated ${state.data.timestamp}`;
+  if (elements.lastUpdated) {
+    elements.lastUpdated.textContent = `Last updated ${state.data.timestamp}`;
+  }
 }
 
 function renderStats() {
@@ -213,7 +222,7 @@ function renderInventory() {
       });
       showMessage(elements.checkoutMessage, response.payload.error || response.payload.message, !response.ok);
       if (response.ok) {
-        await loadState();
+        await refreshAfterChange();
       }
     });
   });
@@ -314,12 +323,12 @@ function renderBreakdown(target, data) {
   }
 
   const max = Math.max(...entries.map(([, count]) => count), 1);
-  target.innerHTML = entries.map(([label, count]) => `
+  target.innerHTML = `<div class="breakdown-list">${entries.map(([label, count]) => `
     <div class="breakdown-item">
-      <div class="breakdown-meta">${escapeHtml(label)} · ${count}</div>
+      <div class="breakdown-meta">${escapeHtml(label)} - ${count}</div>
       <div class="breakdown-bar"><span style="width: ${(count / max) * 100}%"></span></div>
     </div>
-  `).join("");
+  `).join("")}</div>`;
 }
 
 async function onScanSubmit(event) {
@@ -335,7 +344,7 @@ async function onScanSubmit(event) {
     openItemModal("create", response.payload.defaults);
   } else {
     document.getElementById("scanBarcode").value = "";
-    await loadState();
+    await refreshAfterChange();
   }
 }
 
@@ -343,7 +352,7 @@ async function approveSession() {
   const response = await postJson("/api/session/approve", {});
   showMessage(elements.scanMessage, response.payload.error || response.payload.message, !response.ok);
   if (response.ok) {
-    await loadState();
+    await refreshAfterChange();
   }
 }
 
@@ -363,7 +372,7 @@ async function onCheckoutSubmit(event) {
   showMessage(elements.checkoutMessage, response.payload.error || response.payload.message, !response.ok);
   if (response.ok) {
     document.getElementById("checkoutBarcode").value = "";
-    await loadState();
+    await refreshAfterChange();
   }
 }
 
@@ -402,7 +411,7 @@ async function onItemSubmit(event) {
   if (response.ok) {
     elements.itemModal.close();
     document.getElementById("scanBarcode").value = "";
-    await loadState();
+    await refreshAfterChange();
   }
 }
 
@@ -425,7 +434,7 @@ async function onCategorySubmit(event) {
   showMessage(elements.categoryFormMessage, response.payload.error || response.payload.message, !response.ok);
   if (response.ok) {
     elements.categoryModal.close();
-    await loadState();
+    await refreshAfterChange();
   }
 }
 

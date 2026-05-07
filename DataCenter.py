@@ -208,8 +208,10 @@ class Inventory:
             self.archive_item(item_id)
 
     def get_expired_items(self) -> List[Item]:
-        now = datetime.now()
-        return [item for item in self.items.values() if not item.archived and item.exp_date < now]
+        return [
+            item for item in self.items.values()
+            if not item.archived and self.get_item_status(item) == "expired"
+        ]
 
     def get_items_by_barcode(self, barcode: str) -> List[Item]:
         """Get all individual items with the same barcode."""
@@ -278,15 +280,25 @@ class Inventory:
         active_items = [i for i in self.items.values() if not i.archived]
         expired = self.get_expired_items()
         warning = self.get_items_warning_expiration()
+        items_by_category = {
+            cat.name: len(cat.items)
+            for cat in self.categories.values()
+            if len(cat.items) > 0
+        }
+        items_by_storage = {
+            storage.location: len(storage.items)
+            for storage in self.storages.values()
+            if len(storage.items) > 0
+        }
         
         return {
             'total_items': len(active_items),
             'expired_count': len(expired),
             'warning_count': len(warning),
-            'categories': len(self.categories),
-            'storage_locations': len(self.storages),
-            'items_by_category': {cat: len(cat_obj.items) for cat, cat_obj in self.categories.items()},
-            'items_by_storage': {storage: len(stor_obj.items) for storage, stor_obj in self.storages.items()},
+            'categories': len(items_by_category),
+            'storage_locations': len(items_by_storage),
+            'items_by_category': items_by_category,
+            'items_by_storage': items_by_storage,
         }
 
     def update_item(
