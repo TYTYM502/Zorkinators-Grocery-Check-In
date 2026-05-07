@@ -194,7 +194,6 @@ function renderInventory() {
           ${group.items.map((item) => `
             <article class="group-item-card">
               <div class="group-item-meta">
-                <span>Serial ID: ${item.item_id}</span>
                 <span>Purchased: ${escapeHtml(item.purchase_date)}</span>
                 <span>Expires: ${escapeHtml(item.exp_date)}</span>
                 <span>Status: ${statusPill(item.status)}</span>
