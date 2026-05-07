@@ -46,6 +46,10 @@ class Inventory:
     def _normalize_key(value: str) -> str:
         return value.strip().lower()
 
+    @staticmethod
+    def _inventory_priority_key(item: Item):
+        return (item.exp_date, item.purchase_date, item.item_id or 0)
+
     def create_tables(self):
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS categories (
@@ -367,7 +371,7 @@ class Inventory:
 
     def get_inventory_rows(self, query: str = "", category: str = "", storage: str = "", exp_status: str = "all") -> List[dict]:
         results = self.search_items(query, category, storage, exp_status)
-        results.sort(key=lambda item: (item.exp_date, item.name.lower(), item.item_id or 0))
+        results.sort(key=lambda item: (item.exp_date, item.purchase_date, item.name.lower(), item.item_id or 0))
         return [self.serialize_item(item) for item in results]
 
     def get_inventory_groups(self, query: str = "", category: str = "", storage: str = "", exp_status: str = "all") -> List[dict]:
@@ -377,7 +381,7 @@ class Inventory:
 
         groups = []
         for barcode, items in grouped.items():
-            items.sort(key=lambda item: (item.exp_date, item.purchase_date, item.item_id or 0))
+            items.sort(key=self._inventory_priority_key)
             top = items[0]
             groups.append({
                 "barcode": barcode,
@@ -435,22 +439,26 @@ class Inventory:
         return sorted(category.name for category in self.categories.values())
 
     def get_item_status(self, item: Item) -> str:
-        now = datetime.now()
-        if item.exp_date < now:
+        today = datetime.now().date()
+        purchase_day = item.purchase_date.date()
+        expiration_day = item.exp_date.date()
+
+        if today > expiration_day:
             return "expired"
 
         category = self.categories.get(self._normalize_key(item.category))
         if not category:
             return "fresh"
 
-        total_seconds = (item.exp_date - item.purchase_date).total_seconds()
-        if total_seconds <= 0:
+        total_days = (expiration_day - purchase_day).days
+        if total_days <= 0:
             return "expiring_soon"
 
-        remaining_seconds = max((item.exp_date - now).total_seconds(), 0)
-        remaining_threshold = total_seconds * (1 - (category.warning_threshold_percent / 100))
+        elapsed_days = max((today - purchase_day).days, 0)
+        warning_percent = max(0, min(category.warning_threshold_percent, 100))
+        fresh_days = total_days * (warning_percent / 100)
 
-        if remaining_seconds <= remaining_threshold:
+        if elapsed_days >= fresh_days:
             return "expiring_soon"
         return "fresh"
 

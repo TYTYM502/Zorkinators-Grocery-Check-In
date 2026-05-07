@@ -190,7 +190,7 @@ class GroceryWebApp:
         if not items:
             raise LookupError(f"Barcode {barcode} was not found.")
 
-        items.sort(key=lambda existing: existing.purchase_date)
+        items.sort(key=self.inventory._inventory_priority_key)
         removed = items[0]
         self.inventory.archive_item(removed.item_id)
         return {"message": f"Checked out 1x {removed.name}."}
